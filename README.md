@@ -55,6 +55,16 @@ npm run voice:generate -- --dry-run                         # list what would be
 
 The full script is about 330 short lines (~4,600 characters), well inside the ElevenLabs free tier. You can commit `public/audio/`, or let the deploy workflow record it (see below).
 
+### Recording by hand
+
+`voice-lines.csv` lists every line with the file name the app expects. Record each line (for example on the ElevenLabs website with the Juliet voice), save it as an mp3 in `public/audio/` using that file name, then run:
+
+```bash
+npm run voice:generate -- --import   # builds public/audio/manifest.json from the files
+```
+
+Commit `public/audio/`. Any line without a file falls back to the device voice. `--export` regenerates the CSV if the content changes.
+
 ### Tweaking pronunciation
 
 Text-to-speech can't make "pure" phonics sounds, so each sound has a `say` spelling in `src/content/stages.ts`. Stretchy sounds are stretched (`sss`, `mmm`) and bouncy ones get the lightest vowel (`tuh`). If one sounds off, change its `say` and re-run `voice:generate`. Only that clip is re-recorded.

@@ -6,6 +6,11 @@
  * Optional env: ELEVENLABS_VOICE_ID, ELEVENLABS_MODEL_ID.
  * Flags: --force (re-record everything), --dry-run (list what would be recorded).
  *
+ * Recording by hand instead (ElevenLabs website, or your own voice):
+ *   npm run voice:generate -- --export   writes voice-lines.csv (text + file name)
+ *   save each clip as public/audio/<file name> (mp3), then
+ *   npm run voice:generate -- --import   builds the manifest from those files
+ *
  * Writes public/audio/<id>.mp3 and public/audio/manifest.json. Runs are
  * incremental: only new or changed lines are sent to ElevenLabs, and clips for
  * lines that no longer exist are deleted.
@@ -29,6 +34,31 @@ interface Manifest {
 const args = new Set(process.argv.slice(2))
 const force = args.has('--force')
 const dryRun = args.has('--dry-run')
+
+if (args.has('--export')) {
+  const esc = (v: string) => (/[",\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v)
+  const rows = allPhrases().map((t, i) => [String(i + 1), t, `${clipId(t)}.mp3`].map(esc).join(','))
+  writeFileSync('voice-lines.csv', ['line,text,filename', ...rows].join('\n') + '\n')
+  console.log(`Wrote voice-lines.csv (${rows.length} lines)`)
+  process.exit(0)
+}
+
+if (args.has('--import')) {
+  mkdirSync(OUT, { recursive: true })
+  const clips: Manifest['clips'] = {}
+  const missing: string[] = []
+  for (const text of allPhrases()) {
+    const file = `${clipId(text)}.mp3`
+    if (existsSync(join(OUT, file))) clips[text] = { file }
+    else missing.push(text)
+  }
+  const m: Manifest = { voiceId: 'manual', modelId: 'manual', clips }
+  writeFileSync(MANIFEST, JSON.stringify(m, null, 1) + '\n')
+  console.log(`Imported ${Object.keys(clips).length} clips; ${missing.length} lines still use the device voice.`)
+  for (const t of missing.slice(0, 20)) console.log('  missing:', t)
+  if (missing.length > 20) console.log(`  …and ${missing.length - 20} more`)
+  process.exit(0)
+}
 const apiKey = process.env.ELEVENLABS_API_KEY ?? ''
 const voiceId = process.env.ELEVENLABS_VOICE_ID || DEFAULT_VOICE_ID
 const modelId = process.env.ELEVENLABS_MODEL_ID || DEFAULT_MODEL_ID
