@@ -28,6 +28,8 @@ jobs:
 
       # Pre-recorded ElevenLabs audio is cached between runs, so only new or
       # changed lines are sent to ElevenLabs. Skipped if no secret is set.
+      # A voice failure still deploys the site (the app falls back to the
+      # device voice); the run is marked with a warning instead.
       - name: Restore voice clips
         uses: actions/cache@v4
         with:
@@ -39,6 +41,7 @@ jobs:
           ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
           ELEVENLABS_VOICE_ID: ${{ vars.ELEVENLABS_VOICE_ID }}
         if: env.ELEVENLABS_API_KEY != ''
+        continue-on-error: true
         run: npm run voice:generate
 
       - run: npm run build

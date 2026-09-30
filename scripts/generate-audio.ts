@@ -60,8 +60,9 @@ if (dryRun) {
 
 let done = 0
 let failed = 0
+let authError = ''
 async function worker() {
-  while (todo.length) {
+  while (todo.length && !authError) {
     const text = todo.shift()!
     try {
       const res = await withRetry(() => synthesise({ text, apiKey, voiceId, modelId }))
@@ -72,8 +73,14 @@ async function worker() {
       done++
       process.stdout.write(`\r  recorded ${done}`)
     } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err)
+      // A bad key or missing permission fails every line, so stop at the first one.
+      if (/ElevenLabs (401|403)/.test(msg)) {
+        authError ||= msg
+        continue
+      }
       failed++
-      console.error(`\n  ✗ "${text}": ${err instanceof Error ? err.message : err}`)
+      console.error(`\n  ✗ "${text}": ${msg}`)
     }
   }
 }
@@ -93,6 +100,11 @@ async function withRetry<T>(fn: () => Promise<T>, tries = 4): Promise<T> {
 
 await Promise.all(Array.from({ length: CONCURRENCY }, worker))
 console.log()
+if (authError) {
+  console.error(`ElevenLabs rejected the API key, so nothing more was recorded.\n  ${authError}`)
+  console.error('Check ELEVENLABS_API_KEY is correct and has Text to Speech access.')
+  failed++
+}
 
 // Sort keys so the manifest diff stays readable.
 manifest.clips = Object.fromEntries(Object.entries(manifest.clips).sort(([a], [b]) => a.localeCompare(b)))
