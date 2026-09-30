@@ -1,0 +1,59 @@
+@import 'tailwindcss';
+
+@theme {
+  --font-display: 'Fredoka', ui-rounded, system-ui, sans-serif;
+  --font-letters: 'Andika', 'Comic Sans MS', system-ui, sans-serif;
+}
+
+@utility font-display {
+  font-family: var(--font-display);
+  font-weight: 600;
+}
+
+@utility font-letters {
+  font-family: var(--font-letters);
+  font-weight: 700;
+}
+
+html {
+  /* Only on html: a body background would paint over the fixed sky layer. */
+  background: #e0f2fe;
+}
+
+body {
+  margin: 0;
+  color: #0f172a;
+  overscroll-behavior: none;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-user-select: none;
+  user-select: none;
+  font-family: var(--font-display);
+}
+
+input,
+textarea {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+button:focus-visible {
+  outline: 4px solid #facc15;
+  outline-offset: 3px;
+}
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .certificate,
+  .certificate * {
+    visibility: visible;
+  }
+  .certificate {
+    position: fixed;
+    inset: 0;
+    margin: auto;
+    height: fit-content;
+    box-shadow: none !important;
+  }
+}
